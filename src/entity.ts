@@ -7,7 +7,7 @@ export default class Entity {
 	private fileContents: string;
 	private packageName: string = "";
 	private table: string = "";
-	private className: string = "";
+	private _className: string = "";
 	private fields: Field[] = [];
 	private readonly fieldRegex = /^\s*(private|protected|public)\s*([\w<>_]+)\s*([\w_]+);/gm;
 	private readonly packageRegex = /package ([a-zA-Z.]+);/;
@@ -16,7 +16,7 @@ export default class Entity {
 	constructor(filename: string, options = DEFAULT_OPTS) {
 		this.options = options;
 		this.fileContents = this.loadFile(filename);
-		this.className = this.options.prefix + basename(filename).replace(".java", "") + this.options.suffix;
+		this._className = this.options.prefix + basename(filename).replace(".java", "") + this.options.suffix;
 		this.parse();
 	}
 
@@ -35,11 +35,14 @@ export default class Entity {
 		this.fields = fieldLines ? fieldLines.map(f => new Field(f, this.options)) : [];
 	}
 
-	private asInterface(): string {
-		return `export interface ${this.className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n }`;
+	public get className(): string{
+		return this._className;
+	}
+
+	public asInterface(): string {
+		return `export interface ${this._className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n}`;
 	}
 
 	public saveToFile(dir: string) {
-		fs.writeFileSync(join(dir, this.className + ".d.ts"), this.asInterface());
 	}
 }

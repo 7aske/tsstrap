@@ -26,11 +26,10 @@ if (!fs.existsSync(entityPackage)) {
 }
 
 fs.readdirSync(entityPackage).forEach((file) => {
-	const filepath = path.join(process.cwd(), entityPackage, file);
+	const filepath = path.join(entityPackage, file);
 	if (!fs.lstatSync(filepath).isDirectory()){
 		const e = new Entity(filepath, {suffix:program.suffix || "", prefix: program.prefix || ""});
-		if (!fs.existsSync(filepath) || program.overwrite) {
-			e.saveToFile(path.join(process.cwd(), program.output));
-		}
+		const outputPath = path.join(program.output, e.className + ".d.ts");
+		if (!fs.existsSync(outputPath) || program.overwrite) fs.writeFileSync(outputPath, e.asInterface());
 	}
 });
