@@ -7,7 +7,8 @@ export default class Entity {
 	private fileContents: string;
 	private packageName: string = "";
 	private table: string = "";
-	private _className: string = "";
+	private className: string = "";
+	private _fileName: string = "";
 	private fields: Field[] = [];
 	private readonly fieldRegex = /^\s*(private|protected|public)\s*([\w<>_]+)\s*([\w_]+);/gm;
 	private readonly packageRegex = /package ([a-zA-Z.]+);/;
@@ -16,7 +17,8 @@ export default class Entity {
 	constructor(filename: string, options = DEFAULT_OPTS) {
 		this.options = options;
 		this.fileContents = this.loadFile(filename);
-		this._className = this.options.prefix + basename(filename).replace(".java", "") + this.options.suffix;
+		this._fileName = basename(filename).replace(".java", "");
+		this.className = this.options.prefix + this._fileName + this.options.suffix;
 		this.parse();
 	}
 
@@ -35,12 +37,12 @@ export default class Entity {
 		this.fields = fieldLines ? fieldLines.map(f => new Field(f, this.options)) : [];
 	}
 
-	public get className(): string{
-		return this._className;
+	public get fileName(): string{
+		return this._fileName;
 	}
 
 	public asInterface(): string {
-		return `export interface ${this._className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n}`;
+		return `export interface ${this.className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n}`;
 	}
 
 	public saveToFile(dir: string) {
