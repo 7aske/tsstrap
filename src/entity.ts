@@ -1,37 +1,42 @@
-import fs, { existsSync } from "fs";
+import fs from "fs";
 import { basename, join } from "path";
 import Field from "./field";
+import {DEFAULT_OPTS} from "./options";
 
 export default class Entity {
 	private fileContents: string;
-	packageName: string = "";
-	table: string = "";
-	className: string = "";
-	fields: Field[] = [];
+	private packageName: string = "";
+	private table: string = "";
+	private className: string = "";
+	private fields: Field[] = [];
+	private readonly fieldRegex = /^\s*(private|protected|public)\s*([\w<>_]+)\s*([\w_]+);/gm;
+	private readonly packageRegex = /package ([a-zA-Z.]+);/;
+	private options;
 
-	constructor(filename: string) {
+	constructor(filename: string, options = DEFAULT_OPTS) {
+		this.options = options;
 		this.fileContents = this.loadFile(filename);
-		this.className = "I" + basename(filename).replace(".java", "");
+		this.className = this.options.prefix + basename(filename).replace(".java", "") + this.options.suffix;
 		this.parse();
 	}
 
 	private loadFile(fileName: string): string {
-		if (!existsSync(fileName)) {
+		if (!fs.existsSync(fileName)) {
 			throw `file ${fileName} not found`;
 		}
+
 		return fs.readFileSync(fileName).toString();
 	}
 
 	private parse() {
-		const fieldRegex = /^\s*(private|protected|public)\s*([\w<>_]+)\s*([\w_]+);/gm;
-		const parts = this.fileContents.match(/package ([a-zA-Z.]+);/);
+		const parts = this.fileContents.match(this.packageRegex);
 		this.packageName = parts ? parts[1] : "";
-		const fieldLines = this.fileContents.match(fieldRegex);
-		this.fields = fieldLines ? fieldLines.map(f => new Field(f)) : [];
+		const fieldLines = this.fileContents.match(this.fieldRegex);
+		this.fields = fieldLines ? fieldLines.map(f => new Field(f, this.options)) : [];
 	}
 
 	private asInterface(): string {
-		return `declare interface ${this.className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n }`;
+		return `export interface ${this.className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n }`;
 	}
 
 	public saveToFile(dir: string) {

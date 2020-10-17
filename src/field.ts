@@ -1,3 +1,5 @@
+import {DEFAULT_OPTS} from "./options";
+
 export const enum AccessModifier {
 	PRIVATE = "private",
 	PUBLIC = "public",
@@ -5,11 +7,13 @@ export const enum AccessModifier {
 }
 
 export default class Field {
-	modifier: AccessModifier;
-	type: string;
-	name: string;
+	private modifier: AccessModifier;
+	private type: string;
+	private name: string;
+	private options;
 
-	constructor(line: string) {
+	constructor(line: string, options = DEFAULT_OPTS) {
+		this.options = options;
 		const fieldRegex = /^\s*(private|protected|public)\s*([\w_<>]+)\s*([\w_]+);/;
 		const parts = line.trim().match(fieldRegex);
 		if (parts) {
@@ -17,9 +21,11 @@ export default class Field {
 			let type = parts[2];
 			if (type.startsWith("List")) {
 				type = type.match(/List<([\w]*)>/)![1] + "[]";
+			} else if (type.startsWith("Set")) {
+				type = type.match(/Set<([\w]*)>/)![1] + "[]";
 			}
 
-			this.type = Field.typeConv(type);
+			this.type = this.typeConv(type);
 			this.name = parts[3];
 		} else {
 			throw `cannot parse ${line} as Field`;
@@ -31,7 +37,7 @@ export default class Field {
 		return `${this.name}: ${this.type};`;
 	}
 
-	static typeConv(type: string): string {
+	private typeConv(type: string): string {
 		switch (type) {
 			case "Integer":
 			case "Long":
@@ -54,7 +60,7 @@ export default class Field {
 			case "LocalDateTime":
 				return "Date";
 			default:
-				return "I" + type;
+				return this.options.prefix + type + this.options.suffix;
 		}
 	}
 }
