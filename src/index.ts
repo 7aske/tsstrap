@@ -15,6 +15,7 @@ program
 	.option("-o, --output <filepath>", "output root path", "./")
 	.option("-p, --prefix <string>", "interface declaration name prefix", "")
 	.option("-s, --suffix <string>", "interface declaration name suffix", "")
+	.option("-w, --overwrite", "overwrite existing files")
 	.parse(process.argv);
 
 if (!fs.existsSync(entityPackage)) {
@@ -28,6 +29,8 @@ fs.readdirSync(entityPackage).forEach((file) => {
 	const filepath = path.join(process.cwd(), entityPackage, file);
 	if (!fs.lstatSync(filepath).isDirectory()){
 		const e = new Entity(filepath, {suffix:program.suffix || "", prefix: program.prefix || ""});
-		e.saveToFile(path.join(process.cwd(), program.output));
+		if (!fs.existsSync(filepath) || program.overwrite) {
+			e.saveToFile(path.join(process.cwd(), program.output));
+		}
 	}
 });
