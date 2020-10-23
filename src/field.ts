@@ -1,4 +1,4 @@
-import {DEFAULT_OPTS} from "./options";
+import { DEFAULT_OPTS } from "./options";
 
 export const enum AccessModifier {
 	PRIVATE = "private",
@@ -8,8 +8,9 @@ export const enum AccessModifier {
 
 export default class Field {
 	private modifier: AccessModifier;
-	private type: string;
-	private name: string;
+	private readonly _type: string;
+	private readonly name: string;
+	private _isClass = false;
 	private options;
 
 	constructor(line: string, options = DEFAULT_OPTS) {
@@ -25,16 +26,27 @@ export default class Field {
 				type = type.match(/Set<([\w]*)>/)![1] + "[]";
 			}
 
-			this.type = this.typeConv(type);
+			this._type = this.typeConv(type);
 			this.name = parts[3];
 		} else {
 			throw `cannot parse ${line} as Field`;
 		}
+	}
 
+	public get isClass(): boolean {
+		return this._isClass;
+	}
+
+	public get type(): string {
+		return this._type;
 	}
 
 	public asTSField() {
-		return `${this.name}: ${this.type};`;
+		if(this.isClass){
+			return `${this.name}: ${this._type}|number;`;
+		} else {
+			return `${this.name}: ${this._type};`;
+		}
 	}
 
 	private typeConv(type: string): string {
@@ -60,6 +72,7 @@ export default class Field {
 			case "LocalDateTime":
 				return "Date";
 			default:
+				this._isClass = true;
 				return this.options.prefix + type + this.options.suffix;
 		}
 	}
