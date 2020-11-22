@@ -28,23 +28,30 @@ if (!fs.existsSync(entityPackage)) {
 	program.help();
 }
 
+program.output = path.join(program.output, "src");
+const servicesTypesPath = path.join(program.output, "@types/services");
+const servicesPath = path.join(program.output, "services");
+const entityTypesPath = path.join(program.output, "@types/entity");
+
+fs.mkdirSync(entityTypesPath, {recursive: true});
 
 if (program.services) {
-	const serviceOutputPath = path.join(program.output, "@types/services", "GenericService.d.ts");
+	[servicesPath, servicesTypesPath].forEach(pth => fs.mkdirSync(pth, {recursive: true}));
+	const serviceOutputPath = path.join(servicesTypesPath, "GenericService.d.ts");
 	fs.writeFileSync(serviceOutputPath, genericService());
 }
 
 fs.readdirSync(entityPackage).forEach((file) => {
 	const filepath = path.join(entityPackage, file);
 	if (!fs.lstatSync(filepath).isDirectory()) {
-		const e = new Entity(filepath, {suffix: program.suffix || "", prefix: program.prefix || ""});
-		const s = new Service(e);
-		const outputPath = path.join(program.output, "@types/entity", e.fileName + ".d.ts");
-		const serviceInterfaceOutputPath = path.join(program.output, "@types/services", e.serviceFileName + ".d.ts");
-		const serviceOutputPath = path.join(program.output, "services", e.serviceFileName + ".ts");
+		const entity = new Entity(filepath, {suffix: program.suffix || "", prefix: program.prefix || ""});
+		const service = new Service(entity);
+		const outputPath = path.join(entityTypesPath, entity.fileName + ".d.ts");
+		const serviceInterfaceOutputPath = path.join(servicesTypesPath, entity.serviceFileName + ".d.ts");
+		const serviceOutputPath = path.join(servicesPath, entity.serviceFileName + ".ts");
 
-		if (!fs.existsSync(outputPath) || program.overwrite) fs.writeFileSync(outputPath, e.asInterface());
-		if ((!fs.existsSync(serviceInterfaceOutputPath) || program.overwrite) && program.services) fs.writeFileSync(serviceInterfaceOutputPath, e.asService());
-		if ((!fs.existsSync(serviceOutputPath) || program.overwrite) && program.services) fs.writeFileSync(serviceOutputPath, s.asService());
+		if (!fs.existsSync(outputPath) || program.overwrite) fs.writeFileSync(outputPath, entity.asInterface());
+		if ((!fs.existsSync(serviceInterfaceOutputPath) || program.overwrite) && program.services) fs.writeFileSync(serviceInterfaceOutputPath, entity.asService());
+		if ((!fs.existsSync(serviceOutputPath) || program.overwrite) && program.services) fs.writeFileSync(serviceOutputPath, service.asService());
 	}
 });

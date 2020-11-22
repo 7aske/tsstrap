@@ -1,5 +1,5 @@
 import Entity from "./entity";
-import { camelToKebab } from "./util";
+import { camelToKebab, plural } from "./util";
 
 export default class Service {
 	private readonly _entity: Entity;
@@ -9,15 +9,7 @@ export default class Service {
 	}
 
 	public asService() {
-		let endpoint = camelToKebab(this._entity.fileName);
-		if (endpoint.endsWith("s")) {
-			endpoint = endpoint + "es";
-		} else if (endpoint.endsWith("y")) {
-			endpoint = endpoint.substring(0, endpoint.length - 1) + "ies";
-		} else {
-			endpoint = endpoint + "s";
-		}
-
+		let endpoint = plural(camelToKebab(this._entity.fileName));
 		return `
 import BaseService from "./BaseService";
 import { ${this._entity.serviceClassName} } from "../@types/services/${this._entity.serviceFileName}";

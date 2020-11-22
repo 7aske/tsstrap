@@ -48,3 +48,10 @@ export const camelToKebab = (text: string) => {
 	}
 	return result;
 };
+
+export const plural = (str: string): string => {
+	if (str.endsWith("s")) str = str + "es";
+	else if (str.endsWith("y")) str = str.substring(0, str.length - 1) + "ies";
+	else str = str + "s";
+	return str;
+};
