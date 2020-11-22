@@ -2,8 +2,10 @@ import Entity from "./entity";
 import fs from "fs";
 import path from "path";
 import program from "commander";
-import { genericService } from "./genericService";
+import { genericService, genericInterface } from "./generic";
 import Service from "./service";
+import Field from "./field";
+import { baseService } from "./baseService";
 
 const PROG = "tsstrap";
 
@@ -32,20 +34,34 @@ program.output = path.join(program.output, "src");
 const servicesTypesPath = path.join(program.output, "@types/services");
 const servicesPath = path.join(program.output, "services");
 const entityTypesPath = path.join(program.output, "@types/entity");
+const domainPath = path.join(entityPackage, "domain");
+const enums = fs.readdirSync(domainPath);
 
 fs.mkdirSync(entityTypesPath, {recursive: true});
 
 if (program.services) {
 	[servicesPath, servicesTypesPath].forEach(pth => fs.mkdirSync(pth, {recursive: true}));
 	const serviceOutputPath = path.join(servicesTypesPath, "GenericService.d.ts");
+	const baseServicePath = path.join(servicesPath, "BaseService.ts");
 	fs.writeFileSync(serviceOutputPath, genericService());
+	fs.writeFileSync(baseServicePath, baseService());
 }
 
+const identifiablePath = path.join(entityTypesPath, "Identifiable.d.ts");
+fs.writeFileSync(identifiablePath, genericInterface());
 fs.readdirSync(entityPackage).forEach((file) => {
 	const filepath = path.join(entityPackage, file);
 	if (!fs.lstatSync(filepath).isDirectory()) {
 		const entity = new Entity(filepath, {suffix: program.suffix || "", prefix: program.prefix || ""});
 		const service = new Service(entity);
+		entity.fields = entity.fields.map(f => {
+			if (!f.isClass) return f;
+			if (!enums.some(e => e.startsWith(f.javaType))) return f;
+			f.isClass = false;
+			f.type = "string";
+			return f;
+		}) as unknown as Field[];
+
 		const outputPath = path.join(entityTypesPath, entity.fileName + ".d.ts");
 		const serviceInterfaceOutputPath = path.join(servicesTypesPath, entity.serviceFileName + ".d.ts");
 		const serviceOutputPath = path.join(servicesPath, entity.serviceFileName + ".ts");

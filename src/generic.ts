@@ -6,3 +6,9 @@ export const genericService = () => {
 	deleteById(id: number): Promise<boolean>;
 }`;
 };
+
+export const genericInterface = (): string => {
+	return `export interface Identifiable {
+	id: number|undefined;
+}`
+}

@@ -8,8 +8,9 @@ export const enum AccessModifier {
 
 export default class Field {
 	private modifier: AccessModifier;
-	private readonly _type: string;
-	private readonly name: string;
+	private _type: string;
+	private _javaType: string;
+	private _name: string;
 	private _isClass = false;
 	private options;
 
@@ -26,8 +27,9 @@ export default class Field {
 				type = type.match(/Set<([\w]*)>/)![1] + "[]";
 			}
 
+			this._javaType = type;
 			this._type = this.typeConv(type);
-			this.name = parts[3];
+			this._name = parts[3];
 		} else {
 			throw `cannot parse ${line} as Field`;
 		}
@@ -37,16 +39,36 @@ export default class Field {
 		return this._isClass;
 	}
 
+	public set isClass(value: boolean) {
+		this._isClass = value;
+	}
+
+	public asTSField() {
+		return `${this._name}: ${this._type};`;
+	}
+
+	public get javaType(): string {
+		return this._javaType;
+	}
+
+	public set javaType(value: string) {
+		this._javaType = value;
+	}
+
+	public get name(): string {
+		return this._name;
+	}
+
+	public set name(value: string) {
+		this._name = value;
+	}
+
 	public get type(): string {
 		return this._type;
 	}
 
-	public asTSField() {
-		if(this.isClass){
-			return `${this.name}: ${this._type}|number;`;
-		} else {
-			return `${this.name}: ${this._type};`;
-		}
+	public set type(value: string) {
+		this._type = value;
 	}
 
 	private typeConv(type: string): string {

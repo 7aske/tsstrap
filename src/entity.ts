@@ -14,7 +14,7 @@ export default class Entity {
 	private static readonly fieldRegex = /^\s*(private|protected|public)\s*([\w<>_]+)\s*([\w_]+);/gm;
 	private static readonly packageRegex = /package ([a-zA-Z.]+);/;
 	private readonly options;
-	private fields: Field[] = [];
+	private _fields: Field[] = [];
 
 	constructor(filename: string, options = DEFAULT_OPTS) {
 		this.options = options;
@@ -37,7 +37,15 @@ export default class Entity {
 		const parts = this.fileContents.match(Entity.packageRegex);
 		this.packageName = parts ? parts[1] : "";
 		const fieldLines = this.fileContents.match(Entity.fieldRegex);
-		this.fields = fieldLines ? fieldLines.map(f => new Field(f, this.options)) : [];
+		this._fields = fieldLines ? fieldLines.map(f => new Field(f, this.options)) : [];
+	}
+
+	get fields(): Field[] {
+		return this._fields;
+	}
+
+	set fields(value: Field[]) {
+		this._fields = value;
 	}
 
 	public get fileName(): string {
@@ -57,16 +65,17 @@ export default class Entity {
 	}
 
 	public asInterface(): string {
-		let out = "";
-		this.fields.forEach(f => {
-			let field = f.type;
-			field = field.substring(this.options.prefix!.length);
-			field = field.substring(0, field.length - this.options.suffix!.length);
+		let out = "import { Identifiable } from \"./Identifiable\";\n";
+		this._fields.forEach(f => {
+			let type = f.type.replace("[]", "");
+			let field = type.substring(this.options.prefix!.length, type.length - this.options.suffix!.length);
 			if (f.isClass) {
-				out += `import { ${f.type} } from  "./${field}"\n`;
+				if (out.indexOf(type) === -1) {
+					out += `import { ${type} } from  "./${field}"\n`;
+				}
 			}
 		});
-		out += `\nexport interface ${this._className} {\n\t${this.fields.map(f => f.asTSField()).join("\n\t")}\n}`;
+		out += `\nexport interface ${this._className} extends Identifiable {\n\t${this._fields.map(f => f.asTSField()).join("\n\t")}\n}`;
 		return out;
 	}
 
