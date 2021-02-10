@@ -35,7 +35,9 @@ const servicesTypesPath = path.join(program.output, "@types/services");
 const servicesPath = path.join(program.output, "services");
 const entityTypesPath = path.join(program.output, "@types/entity");
 const domainPath = path.join(entityPackage, "domain");
-const enums = fs.readdirSync(domainPath);
+let enums: string[] = [];
+if (fs.existsSync(domainPath))
+	enums = fs.readdirSync(domainPath);
 
 fs.mkdirSync(entityTypesPath, {recursive: true});
 
